@@ -34,6 +34,12 @@ namespace Appsec_Assignment
                 options.Lockout.MaxFailedAccessAttempts = 3;
                 options.Lockout.AllowedForNewUsers = true;
             });
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.Cookie.Name = ".AspNetCore.Identity.Application";
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(2);
+                options.SlidingExpiration = true;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -46,9 +52,16 @@ namespace Appsec_Assignment
             else
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
             }
+            app.Use(async (context, next) =>
+            {
+                await next();
+                if (context.Response.StatusCode == 404)
+                {
+                    context.Request.Path = "/Home/Error404";
+                    await next();
+                }
+            });
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
